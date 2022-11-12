@@ -72,7 +72,10 @@ func fetchCurrency(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(body, &moeda)
 
-	db.Create(&MoedaDb{
+	gormCtx, gormCancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer gormCancel()
+
+	db.WithContext(gormCtx).Create(&MoedaDb{
 		Cotacao: moeda.Usdbrl.Bid,
 	})
 

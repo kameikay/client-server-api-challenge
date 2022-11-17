@@ -34,6 +34,7 @@ type MoedaDb struct {
 
 const URL = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
 const REQUEST_MAX_DURATION = 200 * time.Millisecond
+const DB_MAX_TIMEOUT = 10 * time.Millisecond
 
 func main() {
 	http.HandleFunc("/cotacao", fetchCurrency)
@@ -72,12 +73,16 @@ func fetchCurrency(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(body, &moeda)
 
-	gormCtx, gormCancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	gormCtx, gormCancel := context.WithTimeout(context.Background(), DB_MAX_TIMEOUT)
 	defer gormCancel()
 
-	db.WithContext(gormCtx).Create(&MoedaDb{
+	result := db.WithContext(gormCtx).Create(&MoedaDb{
 		Cotacao: moeda.Usdbrl.Bid,
 	})
+
+	if result.Error != nil {
+		panic(result.Error)
+	}
 
 	w.Write(body)
 }
